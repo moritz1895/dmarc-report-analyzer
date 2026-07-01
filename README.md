@@ -1,18 +1,18 @@
 # dmarc-report-analyzer
 
-Überwacht das Postfach `postmaster@rohde.ms` per IMAP auf eingehende DMARC-Aggregatreports (RUA), wertet jeden Report per Claude Haiku 4.5 aus und schickt eine leicht verständliche Zusammenfassung mit konkreten Handlungsempfehlungen per SMTP an denselben Postmaster zurück.
+Überwacht ein beliebiges Postmaster-Postfach (Adresse konfigurierbar über die Umgebungsvariable `POSTMASTER_EMAIL`, z. B. `postmaster@example.com`) per IMAP auf eingehende DMARC-Aggregatreports (RUA), wertet jeden Report per Claude Haiku 4.5 aus und schickt eine leicht verständliche Zusammenfassung mit konkreten Handlungsempfehlungen per SMTP an denselben Postmaster zurück.
 
 ## Funktionsweise
 
 ```
-Mailserver (postmaster@rohde.ms)
+Mailserver (Postmaster-Postfach, z. B. postmaster@example.com)
         │  DMARC-Reports (XML, meist .gz/.zip-Anhang)
         ▼
   IMAP-Adapter  ──►  Domain-Parser  ──►  Statistik  ──►  Claude Haiku 4.5  ──►  SMTP-Adapter
                                                                                      │
                                                                                      ▼
                                                                      Zusammenfassung + Empfehlungen
-                                                                       an postmaster@rohde.ms
+                                                                       an dasselbe Postmaster-Postfach
 ```
 
 Der Service läuft als geplanter Hintergrundjob (konfigurierbarer Cron, Standard: alle 15 Minuten), öffnet keinen eingehenden Port und benötigt keine Datenbank — jede E-Mail wird direkt verarbeitet und über ein IMAP-Flag als bearbeitet markiert.
@@ -38,16 +38,19 @@ Hexagonale Architektur (Ports & Adapters), siehe [`hexagonal-arch`](https://gith
 
 - Java 25 (für lokale Builds)
 - Docker (für den containerisierten Betrieb)
-- Ein IMAP-/SMTP-fähiges Postfach `postmaster@rohde.ms`
+- Ein IMAP-/SMTP-fähiges Postmaster-Postfach (beliebige Adresse)
 - Ein Anthropic-API-Key ([console.anthropic.com](https://console.anthropic.com))
 
 ## Schnellstart mit Docker Compose
 
 ```bash
 cp .env.example .env
-# .env mit echten Zugangsdaten befüllen (IMAP_PASSWORD, SMTP_PASSWORD, ANTHROPIC_API_KEY)
+# .env mit echten Werten befüllen: POSTMASTER_EMAIL, IMAP_HOST, SMTP_HOST,
+# IMAP_PASSWORD, SMTP_PASSWORD, ANTHROPIC_API_KEY
 docker compose up -d
 ```
+
+`docker-compose.yml` leitet `POSTMASTER_EMAIL`/`IMAP_HOST`/`SMTP_HOST` aus `.env` in die darunterliegenden `DMARC_ANALYZER_MAIL_*`-Variablen der Anwendung weiter (siehe Konfigurationstabellen unten) — beim direkten Start ohne Docker Compose (`mvn spring-boot:run` oder ein eigenes Deployment) sind stattdessen die `DMARC_ANALYZER_MAIL_*`-Variablen selbst zu setzen.
 
 ## Lokal bauen und starten
 
@@ -66,7 +69,7 @@ Alle Parameter werden über `application.yml` bzw. Umgebungsvariablen gesetzt.
 |---|---|---|---|
 | `dmarc-analyzer.mail.imap.host` | `DMARC_ANALYZER_MAIL_IMAP_HOST` | – (erforderlich) | IMAP-Server-Hostname |
 | `dmarc-analyzer.mail.imap.port` | `DMARC_ANALYZER_MAIL_IMAP_PORT` | `993` | IMAP-Port |
-| `dmarc-analyzer.mail.imap.username` | `DMARC_ANALYZER_MAIL_IMAP_USERNAME` | – (erforderlich) | Postfach-Login (`postmaster@rohde.ms`) |
+| `dmarc-analyzer.mail.imap.username` | `DMARC_ANALYZER_MAIL_IMAP_USERNAME` | – (erforderlich) | Postfach-Login (das Postmaster-Postfach, z. B. `postmaster@example.com`) |
 | `dmarc-analyzer.mail.imap.password` | `DMARC_ANALYZER_MAIL_IMAP_PASSWORD` | – (erforderlich) | Postfach-Passwort |
 | `dmarc-analyzer.mail.imap.use-ssl` | `DMARC_ANALYZER_MAIL_IMAP_USE_SSL` | `true` | Implizites TLS (IMAPS) statt STARTTLS |
 | `dmarc-analyzer.mail.imap.folder` | `DMARC_ANALYZER_MAIL_IMAP_FOLDER` | `INBOX` | Zu überwachender Ordner |
@@ -81,7 +84,7 @@ Alle Parameter werden über `application.yml` bzw. Umgebungsvariablen gesetzt.
 | `dmarc-analyzer.mail.smtp.password` | `DMARC_ANALYZER_MAIL_SMTP_PASSWORD` | – (erforderlich) | SMTP-Passwort |
 | `dmarc-analyzer.mail.smtp.use-start-tls` | `DMARC_ANALYZER_MAIL_SMTP_USE_STARTTLS` | `true` | STARTTLS statt implizitem TLS |
 | `dmarc-analyzer.mail.smtp.from-address` | `DMARC_ANALYZER_MAIL_SMTP_FROM_ADDRESS` | – (erforderlich) | Absenderadresse der Zusammenfassung |
-| `dmarc-analyzer.mail.smtp.recipient-address` | `DMARC_ANALYZER_MAIL_RECIPIENT` | – (erforderlich) | Empfänger der Zusammenfassung (i. d. R. `postmaster@rohde.ms`) |
+| `dmarc-analyzer.mail.smtp.recipient-address` | `DMARC_ANALYZER_MAIL_RECIPIENT` | – (erforderlich) | Empfänger der Zusammenfassung (i. d. R. dasselbe Postmaster-Postfach) |
 
 ### KI-Analyse (Claude)
 
