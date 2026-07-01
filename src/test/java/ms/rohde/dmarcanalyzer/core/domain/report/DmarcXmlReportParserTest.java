@@ -23,7 +23,7 @@ class DmarcXmlReportParserTest {
                 </date_range>
               </report_metadata>
               <policy_published>
-                <domain>rohde.ms</domain>
+                <domain>example.com</domain>
                 <adkim>r</adkim>
                 <aspf>r</aspf>
                 <p>quarantine</p>
@@ -41,15 +41,15 @@ class DmarcXmlReportParserTest {
                   </policy_evaluated>
                 </row>
                 <identifiers>
-                  <header_from>rohde.ms</header_from>
+                  <header_from>example.com</header_from>
                 </identifiers>
                 <auth_results>
                   <dkim>
-                    <domain>rohde.ms</domain>
+                    <domain>example.com</domain>
                     <result>fail</result>
                   </dkim>
                   <spf>
-                    <domain>rohde.ms</domain>
+                    <domain>example.com</domain>
                     <result>pass</result>
                   </spf>
                 </auth_results>
@@ -66,15 +66,15 @@ class DmarcXmlReportParserTest {
                 </row>
                 <auth_results>
                   <dkim>
-                    <domain>rohde.ms</domain>
+                    <domain>example.com</domain>
                     <result>pass</result>
                   </dkim>
                   <dkim>
-                    <domain>rohde.ms</domain>
+                    <domain>example.com</domain>
                     <result>fail</result>
                   </dkim>
                   <spf>
-                    <domain>rohde.ms</domain>
+                    <domain>example.com</domain>
                     <result>pass</result>
                   </spf>
                 </auth_results>
@@ -99,7 +99,7 @@ class DmarcXmlReportParserTest {
         DmarcAggregateReport report = parser.parse(VALID_REPORT_XML);
 
         PolicyPublished policyPublished = report.policyPublished();
-        assertThat(policyPublished.domain()).isEqualTo("rohde.ms");
+        assertThat(policyPublished.domain()).isEqualTo("example.com");
         assertThat(policyPublished.adkimStrict()).isFalse();
         assertThat(policyPublished.aspfStrict()).isFalse();
         assertThat(policyPublished.domainPolicy()).isEqualTo(Disposition.QUARANTINE);
@@ -123,13 +123,13 @@ class DmarcXmlReportParserTest {
         DmarcReportRecord firstRecord = report.records().get(0);
         assertThat(firstRecord.sourceIp()).isEqualTo("203.0.113.5");
         assertThat(firstRecord.messageCount()).isEqualTo(3);
-        assertThat(firstRecord.headerFrom()).isEqualTo("rohde.ms");
+        assertThat(firstRecord.headerFrom()).isEqualTo("example.com");
         assertThat(firstRecord.policyEvaluated())
                 .isEqualTo(new PolicyEvaluated(Disposition.NONE, DmarcAuthResultValue.FAIL, DmarcAuthResultValue.PASS));
         assertThat(firstRecord.dkimAuthResults())
-                .containsExactly(new DkimAuthResult("rohde.ms", DmarcAuthResultValue.FAIL));
+                .containsExactly(new DkimAuthResult("example.com", DmarcAuthResultValue.FAIL));
         assertThat(firstRecord.spfAuthResults())
-                .containsExactly(new SpfAuthResult("rohde.ms", DmarcAuthResultValue.PASS));
+                .containsExactly(new SpfAuthResult("example.com", DmarcAuthResultValue.PASS));
         assertThat(firstRecord.isFullyAligned()).isFalse();
     }
 
@@ -210,7 +210,7 @@ class DmarcXmlReportParserTest {
                     <date_range><begin>1</begin><end>2</end></date_range>
                   </report_metadata>
                   <policy_published>
-                    <domain>rohde.ms</domain>
+                    <domain>example.com</domain>
                     <adkim>r</adkim>
                     <aspf>r</aspf>
                     <p>none</p>

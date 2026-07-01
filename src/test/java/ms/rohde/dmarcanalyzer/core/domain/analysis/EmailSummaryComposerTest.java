@@ -18,7 +18,7 @@ class EmailSummaryComposerTest {
     private final EmailSummaryComposer composer = new EmailSummaryComposer();
 
     private final PolicyPublished policyPublished = new PolicyPublished(
-            "rohde.ms", false, false, Disposition.QUARANTINE, Disposition.QUARANTINE, 100);
+            "example.com", false, false, Disposition.QUARANTINE, Disposition.QUARANTINE, 100);
 
     private DmarcAggregateReport reportFor(String orgName) {
         ReportMetadata metadata = new ReportMetadata(
@@ -26,7 +26,7 @@ class EmailSummaryComposerTest {
         PolicyEvaluated policyEvaluated =
                 new PolicyEvaluated(Disposition.NONE, DmarcAuthResultValue.PASS, DmarcAuthResultValue.PASS);
         DmarcReportRecord record = new DmarcReportRecord(
-                "1.1.1.1", 5, policyEvaluated, "rohde.ms", List.of(), List.of());
+                "1.1.1.1", 5, policyEvaluated, "example.com", List.of(), List.of());
         return new DmarcAggregateReport(metadata, policyPublished, List.of(record));
     }
 

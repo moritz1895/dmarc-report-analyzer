@@ -4,24 +4,24 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      # --- IMAP (reads DMARC aggregate reports from postmaster@rohde.ms) ---
-      - DMARC_ANALYZER_MAIL_IMAP_HOST=imap.rohde.ms
+      # --- IMAP (reads DMARC aggregate reports from the monitored postmaster mailbox) ---
+      - DMARC_ANALYZER_MAIL_IMAP_HOST=${IMAP_HOST}
       - DMARC_ANALYZER_MAIL_IMAP_PORT=993
-      - DMARC_ANALYZER_MAIL_IMAP_USERNAME=postmaster@rohde.ms
+      - DMARC_ANALYZER_MAIL_IMAP_USERNAME=${POSTMASTER_EMAIL}
       - DMARC_ANALYZER_MAIL_IMAP_PASSWORD=${IMAP_PASSWORD}
       # - DMARC_ANALYZER_MAIL_IMAP_USE_SSL=true
       # - DMARC_ANALYZER_MAIL_IMAP_FOLDER=INBOX
 
-      # --- SMTP (sends the summary back to postmaster@rohde.ms) ---
-      - DMARC_ANALYZER_MAIL_SMTP_HOST=smtp.rohde.ms
+      # --- SMTP (sends the summary back to the postmaster mailbox) ---
+      - DMARC_ANALYZER_MAIL_SMTP_HOST=${SMTP_HOST}
       - DMARC_ANALYZER_MAIL_SMTP_PORT=587
-      - DMARC_ANALYZER_MAIL_SMTP_USERNAME=postmaster@rohde.ms
+      - DMARC_ANALYZER_MAIL_SMTP_USERNAME=${POSTMASTER_EMAIL}
       - DMARC_ANALYZER_MAIL_SMTP_PASSWORD=${SMTP_PASSWORD}
-      - DMARC_ANALYZER_MAIL_SMTP_FROM_ADDRESS=postmaster@rohde.ms
+      - DMARC_ANALYZER_MAIL_SMTP_FROM_ADDRESS=${POSTMASTER_EMAIL}
       # - DMARC_ANALYZER_MAIL_SMTP_USE_STARTTLS=true
 
-      # --- Recipient of the summary email ---
-      - DMARC_ANALYZER_MAIL_RECIPIENT=postmaster@rohde.ms
+      # --- Recipient of the summary email (typically the same postmaster mailbox) ---
+      - DMARC_ANALYZER_MAIL_RECIPIENT=${POSTMASTER_EMAIL}
 
       # --- Anthropic API (Claude Haiku 4.5 — cheap/lightweight report analysis) ---
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}

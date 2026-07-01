@@ -24,7 +24,7 @@ class DmarcReportStatisticsCalculatorTest {
             "google.com", "noreply@google.com", "1", Instant.EPOCH, Instant.EPOCH.plusSeconds(86400));
 
     private static final PolicyPublished POLICY_PUBLISHED = new PolicyPublished(
-            "rohde.ms", false, false, Disposition.QUARANTINE, Disposition.QUARANTINE, 100);
+            "example.com", false, false, Disposition.QUARANTINE, Disposition.QUARANTINE, 100);
 
     private DmarcReportRecord record(String sourceIp, int messageCount, DmarcAuthResultValue dkim, DmarcAuthResultValue spf) {
         PolicyEvaluated policyEvaluated = new PolicyEvaluated(Disposition.NONE, dkim, spf);
@@ -32,9 +32,9 @@ class DmarcReportStatisticsCalculatorTest {
                 sourceIp,
                 messageCount,
                 policyEvaluated,
-                "rohde.ms",
-                List.of(new DkimAuthResult("rohde.ms", dkim)),
-                List.of(new SpfAuthResult("rohde.ms", spf)));
+                "example.com",
+                List.of(new DkimAuthResult("example.com", dkim)),
+                List.of(new SpfAuthResult("example.com", spf)));
     }
 
     @Test

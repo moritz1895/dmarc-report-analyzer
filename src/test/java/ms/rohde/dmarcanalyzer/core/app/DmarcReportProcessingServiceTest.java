@@ -68,13 +68,13 @@ class DmarcReportProcessingServiceTest {
             "google.com", "noreply@google.com", "1", Instant.EPOCH, Instant.EPOCH.plusSeconds(86400));
 
     private final PolicyPublished policyPublished = new PolicyPublished(
-            "rohde.ms", false, false, Disposition.QUARANTINE, Disposition.QUARANTINE, 100);
+            "example.com", false, false, Disposition.QUARANTINE, Disposition.QUARANTINE, 100);
 
     private DmarcAggregateReport sampleReport() {
         PolicyEvaluated policyEvaluated =
                 new PolicyEvaluated(Disposition.NONE, DmarcAuthResultValue.PASS, DmarcAuthResultValue.PASS);
         DmarcReportRecord record = new DmarcReportRecord(
-                "1.1.1.1", 5, policyEvaluated, "rohde.ms", List.of(), List.of());
+                "1.1.1.1", 5, policyEvaluated, "example.com", List.of(), List.of());
         return new DmarcAggregateReport(metadata, policyPublished, List.of(record));
     }
 

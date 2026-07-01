@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  *
  * @param host                the IMAP server host name
  * @param port                the IMAP server port (993 for implicit TLS, 143 for STARTTLS)
- * @param username            the mailbox login (e.g. {@code postmaster@rohde.ms})
+ * @param username            the mailbox login (e.g. {@code postmaster@example.com})
  * @param password            the mailbox password
  * @param useSsl              whether to connect with implicit TLS (IMAPS); {@code false} uses STARTTLS on a plain
  *                            connection
