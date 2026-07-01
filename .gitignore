@@ -1,0 +1,19 @@
+target/
+*.class
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# Secrets - never commit
+.env
+*.jks
+*.p12
+*.pfx
+
+# OS
+.DS_Store
+Thumbs.db

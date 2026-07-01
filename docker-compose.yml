@@ -1,0 +1,36 @@
+services:
+  dmarc-report-analyzer:
+    image: dmarc-report-analyzer:latest
+    build: .
+    restart: unless-stopped
+    environment:
+      # --- IMAP (reads DMARC aggregate reports from postmaster@rohde.ms) ---
+      - DMARC_ANALYZER_MAIL_IMAP_HOST=imap.rohde.ms
+      - DMARC_ANALYZER_MAIL_IMAP_PORT=993
+      - DMARC_ANALYZER_MAIL_IMAP_USERNAME=postmaster@rohde.ms
+      - DMARC_ANALYZER_MAIL_IMAP_PASSWORD=${IMAP_PASSWORD}
+      # - DMARC_ANALYZER_MAIL_IMAP_USE_SSL=true
+      # - DMARC_ANALYZER_MAIL_IMAP_FOLDER=INBOX
+
+      # --- SMTP (sends the summary back to postmaster@rohde.ms) ---
+      - DMARC_ANALYZER_MAIL_SMTP_HOST=smtp.rohde.ms
+      - DMARC_ANALYZER_MAIL_SMTP_PORT=587
+      - DMARC_ANALYZER_MAIL_SMTP_USERNAME=postmaster@rohde.ms
+      - DMARC_ANALYZER_MAIL_SMTP_PASSWORD=${SMTP_PASSWORD}
+      - DMARC_ANALYZER_MAIL_SMTP_FROM_ADDRESS=postmaster@rohde.ms
+      # - DMARC_ANALYZER_MAIL_SMTP_USE_STARTTLS=true
+
+      # --- Recipient of the summary email ---
+      - DMARC_ANALYZER_MAIL_RECIPIENT=postmaster@rohde.ms
+
+      # --- Anthropic API (Claude Haiku 4.5 — cheap/lightweight report analysis) ---
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # - DMARC_ANALYZER_AI_ANTHROPIC_MODEL=claude-haiku-4-5
+
+      # --- Polling schedule (cron, default: every 15 minutes) ---
+      # - DMARC_ANALYZER_SCHEDULE_CRON=0 */15 * * * *
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: dmarc-report-analyzer
+
+dmarc-analyzer:
+  mail:
+    imap:
+      host: ${DMARC_ANALYZER_MAIL_IMAP_HOST}
+      port: ${DMARC_ANALYZER_MAIL_IMAP_PORT:993}
+      username: ${DMARC_ANALYZER_MAIL_IMAP_USERNAME}
+      password: ${DMARC_ANALYZER_MAIL_IMAP_PASSWORD}
+      use-ssl: ${DMARC_ANALYZER_MAIL_IMAP_USE_SSL:true}
+      folder: ${DMARC_ANALYZER_MAIL_IMAP_FOLDER:INBOX}
+    smtp:
+      host: ${DMARC_ANALYZER_MAIL_SMTP_HOST}
+      port: ${DMARC_ANALYZER_MAIL_SMTP_PORT:587}
+      username: ${DMARC_ANALYZER_MAIL_SMTP_USERNAME}
+      password: ${DMARC_ANALYZER_MAIL_SMTP_PASSWORD}
+      use-start-tls: ${DMARC_ANALYZER_MAIL_SMTP_USE_STARTTLS:true}
+      from-address: ${DMARC_ANALYZER_MAIL_SMTP_FROM_ADDRESS}
+      recipient-address: ${DMARC_ANALYZER_MAIL_RECIPIENT}
+  ai:
+    anthropic:
+      model: ${DMARC_ANALYZER_AI_ANTHROPIC_MODEL:claude-haiku-4-5}
+  schedule:
+    cron: ${DMARC_ANALYZER_SCHEDULE_CRON:0 */15 * * * *}
