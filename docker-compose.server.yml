@@ -1,7 +1,6 @@
 services:
   dmarc-report-analyzer:
     image: dmarc-report-analyzer:latest
-    build: .
     restart: unless-stopped
     environment:
       # --- IMAP (reads DMARC aggregate reports from the monitored postmaster mailbox) ---
