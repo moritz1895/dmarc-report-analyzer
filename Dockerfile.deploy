@@ -1,0 +1,17 @@
+# Runtime-only image built from a locally pre-built jar (mvn clean package).
+# Used because ms.rohde:hexagonal-arch-* only resolves from the local .m2 cache and
+# is not published to any repository yet, so the multi-stage Dockerfile's in-container
+# Maven build cannot resolve it. See Dockerfile for the normal multi-stage build, which
+# will work once hexagonal-arch is published somewhere reachable from an isolated build.
+FROM eclipse-temurin:25-jre-alpine
+WORKDIR /app
+
+RUN addgroup -S dmarc && adduser -S dmarc -G dmarc
+USER dmarc
+
+COPY target/*.jar app.jar
+
+HEALTHCHECK --interval=1m --timeout=5s --start-period=30s --retries=3 \
+    CMD pgrep -f app.jar || exit 1
+
+ENTRYPOINT ["java", "-Xms64m", "-Xmx192m", "-jar", "app.jar"]

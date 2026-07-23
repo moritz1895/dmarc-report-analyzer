@@ -12,6 +12,8 @@ import ms.rohde.dmarcanalyzer.ports.outbound.AiAnalysisException;
 import ms.rohde.dmarcanalyzer.ports.outbound.AiAnalysisResult;
 import ms.rohde.dmarcanalyzer.ports.outbound.DmarcAnalysisAiPort;
 import ms.rohde.hexagonalarch.annotations.InfrastructureServiceAdapter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
@@ -26,6 +28,8 @@ import java.util.List;
  */
 @InfrastructureServiceAdapter
 public class AnthropicDmarcAnalysisAdapter implements DmarcAnalysisAiPort {
+
+    private static final Logger LOG = LogManager.getLogger(AnthropicDmarcAnalysisAdapter.class);
 
     private static final String SYSTEM_PROMPT = """
             Du bist ein Experte für E-Mail-Authentifizierung (SPF, DKIM, DMARC). Du erhältst \
@@ -55,6 +59,7 @@ public class AnthropicDmarcAnalysisAdapter implements DmarcAnalysisAiPort {
 
     @Override
     public AiAnalysisResult analyze(List<DmarcAggregateReport> reports, List<DmarcReportAnalysisSummary> summaries) {
+        LOG.debug("requesting Claude analysis (model={}) for {} report(s)", properties.model(), reports.size());
         try {
             StructuredMessageCreateParams<DmarcAiAnalysisResponse> params = MessageCreateParams.builder()
                     .model(properties.model())
@@ -71,6 +76,7 @@ public class AnthropicDmarcAnalysisAdapter implements DmarcAnalysisAiPort {
                     .orElseThrow(() -> new AiAnalysisException("Claude returned no structured content block", null))
                     .text();
 
+            LOG.debug("received Claude analysis response");
             return new AiAnalysisResult(parsed.summary(), parsed.recommendations());
         } catch (AnthropicException e) {
             throw new AiAnalysisException("Anthropic API call for DMARC report analysis failed", e);

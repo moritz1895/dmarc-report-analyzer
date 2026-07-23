@@ -10,6 +10,8 @@ import ms.rohde.dmarcanalyzer.ports.outbound.EmailSenderPort;
 import ms.rohde.dmarcanalyzer.ports.outbound.EmailSendingException;
 import ms.rohde.dmarcanalyzer.ports.outbound.SummaryEmailMessage;
 import ms.rohde.hexagonalarch.annotations.InfrastructureServiceAdapter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
@@ -25,6 +27,8 @@ import java.util.Properties;
 @InfrastructureServiceAdapter
 public class SmtpEmailSenderAdapter implements EmailSenderPort {
 
+    private static final Logger LOG = LogManager.getLogger(SmtpEmailSenderAdapter.class);
+
     private final SmtpProperties properties;
 
     public SmtpEmailSenderAdapter(SmtpProperties properties) {
@@ -33,6 +37,8 @@ public class SmtpEmailSenderAdapter implements EmailSenderPort {
 
     @Override
     public void sendSummaryEmail(SummaryEmailMessage message) {
+        LOG.debug("connecting to SMTP {}:{} to send summary '{}' to {}",
+                properties.host(), properties.port(), message.subject(), properties.recipientAddress());
         try {
             Session session = createSession();
             MimeMessage mimeMessage = new MimeMessage(session);
@@ -42,6 +48,7 @@ public class SmtpEmailSenderAdapter implements EmailSenderPort {
             mimeMessage.setText(message.bodyText(), StandardCharsets.UTF_8.name());
 
             Transport.send(mimeMessage, properties.username(), properties.password());
+            LOG.debug("summary email '{}' sent successfully", message.subject());
         } catch (MessagingException e) {
             throw new EmailSendingException("failed to send DMARC analysis summary email", e);
         }

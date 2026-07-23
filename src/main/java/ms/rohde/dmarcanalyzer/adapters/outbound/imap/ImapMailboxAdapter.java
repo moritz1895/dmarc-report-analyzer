@@ -45,8 +45,11 @@ import java.util.zip.ZipInputStream;
  * marked {@code \Seen} — if it carries at least one attachment whose filename matches the
  * conventional DMARC report naming (RFC 7489 Appendix C): a trailing {@code .xml}, {@code .xml.gz}
  * or {@code .xml.zip} (some senders send a bare {@code .gz}/{@code .zip} without the {@code .xml}
- * infix). Every other message in the mailbox is left completely untouched, so the same mailbox
- * remains safe for a human to also read normally.
+ * infix). Some senders (e.g. Google) do not wrap the report in a {@code multipart/mixed} structure
+ * at all but send it as the message's sole, top-level body part with a matching {@code Content-Type}
+ * {@code name} parameter — such single-part messages are treated the same as a matching attachment.
+ * Every other message in the mailbox is left completely untouched, so the same mailbox remains safe
+ * for a human to also read normally.
  */
 @InfrastructureServiceAdapter
 public class ImapMailboxAdapter implements MailboxPort {
@@ -83,11 +86,18 @@ public class ImapMailboxAdapter implements MailboxPort {
                 folder.open(Folder.READ_ONLY);
                 try {
                     Message[] unseen = folder.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+                    LOG.debug("found {} unseen message(s) in folder '{}'", unseen.length, properties.folder());
                     for (Message message : unseen) {
+                        LOG.debug("inspecting unseen message '{}' (subject='{}', content-type='{}')",
+                                messageIdOf(message), subjectOf(message), message.getContentType());
                         List<DmarcReportAttachment> attachments = extractDmarcAttachments(message);
                         if (attachments.isEmpty()) {
+                            LOG.debug("skipping message '{}' — no DMARC-report-like attachment found, "
+                                    + "leaving it untouched", messageIdOf(message));
                             continue;
                         }
+                        LOG.debug("message '{}' has {} DMARC report attachment(s), queuing for processing",
+                                messageIdOf(message), attachments.size());
                         result.add(new IncomingReportEmail(
                                 messageIdOf(message),
                                 subjectOf(message),
@@ -120,6 +130,8 @@ public class ImapMailboxAdapter implements MailboxPort {
                     }
                     if (matches.length == 0) {
                         LOG.warn("could not find message with Message-ID {} to mark as processed", id.value());
+                    } else {
+                        LOG.debug("marked message '{}' as processed (\\Seen)", id.value());
                     }
                 } finally {
                     folder.close(true);
@@ -144,18 +156,36 @@ public class ImapMailboxAdapter implements MailboxPort {
             props.put("mail.imap.starttls.enable", "true");
         }
 
+        LOG.debug("connecting to IMAP {}:{} (protocol={}, folder={})",
+                properties.host(), properties.port(), protocol, properties.folder());
         Session session = Session.getInstance(props);
         Store store = session.getStore(protocol);
         store.connect(properties.host(), properties.username(), properties.password());
         return store;
     }
 
-    private List<DmarcReportAttachment> extractDmarcAttachments(Message message)
+    List<DmarcReportAttachment> extractDmarcAttachments(Message message)
             throws MessagingException, IOException {
         List<DmarcReportAttachment> attachments = new ArrayList<>();
         Object content = message.getContent();
         if (content instanceof Multipart multipart) {
             collectAttachments(multipart, attachments, 0);
+            return attachments;
+        }
+        String filename = message.getFileName();
+        if (!looksLikeDmarcReportFilename(filename)) {
+            LOG.debug("message '{}' is not multipart (content class={}, filename='{}') and does not look like a "
+                            + "DMARC report attachment itself, it can never carry an attachment",
+                    messageIdOf(message), content.getClass().getSimpleName(), filename);
+            return attachments;
+        }
+        try {
+            attachments.addAll(readAttachment(filename, message.getInputStream()));
+            LOG.debug("message '{}' is itself a single-part DMARC report attachment '{}', reading it directly",
+                    messageIdOf(message), filename);
+        } catch (IOException e) {
+            LOG.warn("failed to read/decompress single-part attachment {} of message '{}', skipping",
+                    filename, messageIdOf(message), e);
         }
         return attachments;
     }
@@ -174,10 +204,13 @@ public class ImapMailboxAdapter implements MailboxPort {
             }
             String filename = part.getFileName();
             if (!looksLikeDmarcReportFilename(filename)) {
+                LOG.debug("part {} (filename='{}', content-type='{}') does not look like a DMARC report "
+                        + "attachment, skipping", i, filename, part.getContentType());
                 continue;
             }
             try {
                 attachments.addAll(readAttachment(filename, part.getInputStream()));
+                LOG.debug("read attachment '{}' as a DMARC report candidate", filename);
             } catch (IOException e) {
                 LOG.warn("failed to read/decompress attachment {}, skipping it", filename, e);
             }

@@ -52,6 +52,35 @@ docker compose up -d
 
 `docker-compose.yml` leitet `POSTMASTER_EMAIL`/`IMAP_HOST`/`SMTP_HOST` aus `.env` in die darunterliegenden `DMARC_ANALYZER_MAIL_*`-Variablen der Anwendung weiter (siehe Konfigurationstabellen unten) — beim direkten Start ohne Docker Compose (`mvn spring-boot:run` oder ein eigenes Deployment) sind stattdessen die `DMARC_ANALYZER_MAIL_*`-Variablen selbst zu setzen.
 
+## Deployment auf dem Homeserver
+
+`Dockerfile.deploy` und `docker-compose.server.yml` sind für den produktiven Betrieb auf einem
+Homeserver ohne eigene Docker-Registry gedacht (`docker-compose.yml`/`Dockerfile` bleiben für den
+lokalen Schnellstart). `Dockerfile.deploy` baut kein Jar mehr selbst, sondern kopiert nur ein
+bereits lokal gebautes Jar in ein schlankes Runtime-Image — nötig, weil `ms.rohde:hexagonal-arch-*`
+ausschließlich im lokalen `.m2`-Cache liegt und ein isolierter Docker-Build es nicht auflösen kann.
+
+```bash
+# 1. Jar lokal bauen (hat Zugriff auf das lokale .m2-Cache)
+mvn clean package -DskipTests
+
+# 2. Runtime-Image daraus bauen
+docker build -f Dockerfile.deploy -t dmarc-report-analyzer:latest .
+
+# 3. Image zum Server übertragen (kein Registry-Push nötig)
+docker save dmarc-report-analyzer:latest | gzip | ssh user@homeserver 'gunzip | docker load'
+
+# 4. Einmalig (oder bei Änderungen): .env und docker-compose.server.yml auf den Server kopieren
+scp .env docker-compose.server.yml user@homeserver:/srv/docker/dmarc-analyzer/
+
+# 5. Auf dem Server: Container mit dem neuen Image (neu) starten
+ssh user@homeserver 'cd /srv/docker/dmarc-analyzer && docker compose -f docker-compose.server.yml up -d'
+```
+
+`docker compose up -d` erkennt automatisch, dass sich die `latest`-Image-ID durch `docker load`
+geändert hat, und ersetzt den laufenden Container entsprechend — ein manuelles `down`/`up` ist
+normalerweise nicht nötig.
+
 ## Lokal bauen und starten
 
 ```bash
@@ -98,6 +127,12 @@ Alle Parameter werden über `application.yml` bzw. Umgebungsvariablen gesetzt.
 | Property | Umgebungsvariable | Default | Beschreibung |
 |---|---|---|---|
 | `dmarc-analyzer.schedule.cron` | `DMARC_ANALYZER_SCHEDULE_CRON` | `0 */15 * * * *` | Cron-Ausdruck für das Polling-Intervall |
+
+### Logging
+
+| Property | Umgebungsvariable | Default | Beschreibung |
+|---|---|---|---|
+| — | `DMARC_ANALYZER_LOG_LEVEL` | `INFO` | Log-Level für `ms.rohde.dmarcanalyzer`. Auf `DEBUG` setzen, um pro Lauf/Mail nachzuvollziehen, was der Service tut — z. B. wie viele ungelesene Mails gefunden wurden, warum eine Mail ohne passenden DMARC-Anhang übersprungen wird, oder wann IMAP/SMTP/Anthropic-Aufrufe starten und enden. |
 
 ## Hinweis zum Postfach
 

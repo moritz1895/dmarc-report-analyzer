@@ -26,8 +26,10 @@ public class DmarcReportSchedulerAdapter {
 
     @Scheduled(cron = "${dmarc-analyzer.schedule.cron:0 */15 * * * *}")
     public void triggerReportProcessing() {
+        LOG.debug("scheduled DMARC report processing run starting");
         try {
             dmarcReportProcessingUseCase.processIncomingReports();
+            LOG.debug("scheduled DMARC report processing run finished");
         } catch (RuntimeException e) {
             LOG.error("DMARC report processing run failed unexpectedly", e);
         }

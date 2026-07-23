@@ -60,12 +60,14 @@ public class DmarcReportProcessingService implements DmarcReportProcessingUseCas
     @Override
     public void processIncomingReports() {
         List<IncomingReportEmail> unprocessedEmails = mailboxPort.fetchUnprocessedDmarcReportEmails();
+        LOG.debug("found {} unprocessed email(s) to process", unprocessedEmails.size());
         for (IncomingReportEmail email : unprocessedEmails) {
             processEmail(email);
         }
     }
 
     private void processEmail(IncomingReportEmail email) {
+        LOG.debug("processing email '{}' with {} attachment(s)", email.id().value(), email.attachments().size());
         List<DmarcAggregateReport> reports = new ArrayList<>();
         for (DmarcReportAttachment attachment : email.attachments()) {
             try {
@@ -75,8 +77,11 @@ public class DmarcReportProcessingService implements DmarcReportProcessingUseCas
                         attachment.filename(), email.id().value(), e);
             }
         }
+        LOG.debug("parsed {} report(s) out of {} attachment(s) for email '{}'",
+                reports.size(), email.attachments().size(), email.id().value());
 
         if (reports.isEmpty()) {
+            LOG.debug("email '{}' had no parseable reports; marking as processed anyway", email.id().value());
             mailboxPort.markAsProcessed(email.id());
             return;
         }
@@ -87,6 +92,7 @@ public class DmarcReportProcessingService implements DmarcReportProcessingUseCas
 
         AiAnalysisResult analysisResult;
         try {
+            LOG.debug("requesting AI analysis for email '{}'", email.id().value());
             analysisResult = dmarcAnalysisAiPort.analyze(reports, summaries);
         } catch (AiAnalysisException e) {
             LOG.error("AI analysis failed for email '{}'; leaving it unprocessed for retry", email.id().value(), e);
@@ -104,7 +110,9 @@ public class DmarcReportProcessingService implements DmarcReportProcessingUseCas
                     email.id().value(), e);
             return;
         }
+        LOG.debug("summary email sent for email '{}'", email.id().value());
 
         mailboxPort.markAsProcessed(email.id());
+        LOG.debug("email '{}' fully processed successfully", email.id().value());
     }
 }
