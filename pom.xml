@@ -13,7 +13,7 @@
 
     <groupId>ms.rohde</groupId>
     <artifactId>dmarc-report-analyzer</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>dmarc-report-analyzer</name>
     <description>Überwacht ein Postfach auf eingehende DMARC-Aggregatreports, wertet sie per Claude Haiku aus und
@@ -25,7 +25,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <hexagonal-arch.version>1.0.0-SNAPSHOT</hexagonal-arch.version>
+        <hexagonal-arch.version>1.0.0</hexagonal-arch.version>
         <jspecify.version>1.0.0</jspecify.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <archunit.version>1.4.0</archunit.version>
